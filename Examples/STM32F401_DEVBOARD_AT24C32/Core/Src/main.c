@@ -24,10 +24,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
 #include "24CXX/ee24.h"
 #include "BUTTONS/buttons.h"
-
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,7 +35,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
 #define EEPROM_SIZE                      4096
 #define CTRL_BYTE                  0b01010101
 
@@ -45,7 +42,6 @@
 #define DATA_STOP_ADDRESS                  63
 #define DATA_STRUCT_START_ADDRESS         256
 #define DATA_STRUCT_STOP_ADDRESS          512
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -56,7 +52,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
 char data_str[64] = {0,};
 EE24_HandleTypeDef ee24;
 uint8_t dataRead_Full_ee24[EEPROM_SIZE];
@@ -94,18 +89,15 @@ table_entry_t TABLE_EXAMPLE[4] =
 };
 
 struct_entry_t STRUCT_ARRAY[3] = {};
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
 void Button_React(uint16_t key_number, bool longpress);
 bool EEPROM_Init (void);
 void EEPROM_Erase (void);
 void EEPROM_Show (void);
-
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -424,7 +416,6 @@ void Button_React(uint16_t key_number, bool longpress)
             break;
     }
 }
-
 /* USER CODE END 4 */
 
 /**
@@ -441,8 +432,7 @@ void Error_Handler(void)
   }
   /* USER CODE END Error_Handler_Debug */
 }
-
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
