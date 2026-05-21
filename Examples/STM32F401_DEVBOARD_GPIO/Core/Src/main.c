@@ -18,8 +18,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "BUTTONS/buttons.h"
@@ -32,6 +34,13 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define APB1_TIM_FREQ                            84000000                      // TIM2, TIM3, TIM4, TIM5, TIM6, TIM7
+#define APB2_TIM_FREQ                            84000000                      // TIM1, TIM8, TIM9, TIM10, TIM11
+
+#define TIM9_FREQ                                20                            // кол-во необходимых срабатываний таймера в секунду
+#define TIM9_COUNT_PER_SEC                       50000                         // общее кол-во отсчетов таймера за секунду
+#define TIM9_ARR                                 (TIM9_COUNT_PER_SEC / TIM9_FREQ - 1) // кол-во отсчетов таймера до генерации прерывания
 
 /* USER CODE END PD */
 
@@ -49,8 +58,14 @@ char trans_str[64] = { 0, };
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config (void);
 /* USER CODE BEGIN PFP */
-void Button_React (uint16_t key_number, bool longpress);
+void Button_React ();
 void _UART_TX (char *str, uint8_t size);
+
+Button_t B_0;
+Button_t B_1;
+Button_t B_2;
+Button_t B_3;
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -88,18 +103,32 @@ int main (void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init ();
   MX_USART1_UART_Init ();
+  MX_TIM9_Init ();
   /* USER CODE BEGIN 2 */
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  _UART_TX("Welcome STM32 GPIO test firmware.", sizeof("Welcome STM32 GPIO test firmware."));
+  _UART_TX ("Welcome STM32 GPIO test firmware.", sizeof("Welcome STM32 GPIO test firmware."));
+
+  /* настраиваем TIM9 для срабатывания с заданной частотой */
+  TIM9->PSC = APB2_TIM_FREQ / TIM9_COUNT_PER_SEC - 1;
+  TIM9->ARR = TIM9_ARR;
+  TIM9->EGR |= TIM_EGR_UG;
+  HAL_TIM_Base_Start_IT (&htim9);
+
+  Button_Init (&B_0, B_0_GPIO_Port, B_0_Pin);
+  Button_Init (&B_1, B_1_GPIO_Port, B_1_Pin);
+  Button_Init (&B_2, B_2_GPIO_Port, B_2_Pin);
+  Button_Init (&B_3, B_3_GPIO_Port, B_3_Pin);
+
   while (1)
   {
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    BUTTON_IRQ_Debounce (Button_React);
+    Button_React ();
+    HAL_Delay (200);
   }
   /* USER CODE END 3 */
 }
@@ -149,38 +178,75 @@ void SystemClock_Config (void)
 }
 
 /* USER CODE BEGIN 4 */
-void Button_React (uint16_t key_number, bool longpress)
+
+void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
 {
-  switch (key_number)
+  if (htim->Instance == TIM9)
   {
-    case (B_3_Pin):
-      HAL_GPIO_TogglePin (L_3_GPIO_Port, L_3_Pin);
-      if (longpress)
-        _UART_TX ("B_3 long press", sizeof("B_3 long press"));
-      else
-        _UART_TX ("B_3 short press", sizeof("B_3 short press"));
-      break;
-    case (B_2_Pin):
-      HAL_GPIO_TogglePin (L_2_GPIO_Port, L_2_Pin);
-      if (longpress)
-        _UART_TX ("B_2 long press", sizeof("B_2 long press"));
-      else
-        _UART_TX ("B_2 short press", sizeof("B_2 short press"));
-      break;
-    case (B_1_Pin):
-      HAL_GPIO_TogglePin (L_1_GPIO_Port, L_1_Pin);
-      if (longpress)
-        _UART_TX ("B_1 long press", sizeof("B_1 long press"));
-      else
-        _UART_TX ("B_1 short press", sizeof("B_1 short press"));
-      break;
-    case (B_0_Pin):
-      HAL_GPIO_TogglePin (L_0_GPIO_Port, L_0_Pin);
-      if (longpress)
-        _UART_TX ("B_0 long press", sizeof("B_0 long press"));
-      else
-        _UART_TX ("B_0 short press", sizeof("B_0 short press"));
-      break;
+    Button_Process ();
+  }
+}
+
+void Button_React ()
+{
+  if (B_0.Event != BTN_NONE)
+  {
+    HAL_GPIO_TogglePin (L_0_GPIO_Port, L_0_Pin);
+    ButtonEvent_t event = B_0.Event;
+    B_0.Event = BTN_NONE;
+    if (event == BTN_SHORT_PRESS)
+    {
+      _UART_TX ("B_0 short press", sizeof("B_0 short press"));
+    }
+    else
+    {
+      _UART_TX ("B_0 long press", sizeof("B_0 long press"));
+    }
+  }
+
+  if (B_1.Event != BTN_NONE)
+  {
+    HAL_GPIO_TogglePin (L_1_GPIO_Port, L_1_Pin);
+    ButtonEvent_t event = B_1.Event;
+    B_1.Event = BTN_NONE;
+    if (event == BTN_SHORT_PRESS)
+    {
+      _UART_TX ("B_1 short press", sizeof("B_1 short press"));
+    }
+    else
+    {
+      _UART_TX ("B_1 long press", sizeof("B_1 long press"));
+    }
+  }
+
+  if (B_2.Event != BTN_NONE)
+  {
+    HAL_GPIO_TogglePin (L_2_GPIO_Port, L_2_Pin);
+    ButtonEvent_t event = B_2.Event;
+    B_2.Event = BTN_NONE;
+    if (event == BTN_SHORT_PRESS)
+    {
+      _UART_TX ("B_2 short press", sizeof("B_2 short press"));
+    }
+    else
+    {
+      _UART_TX ("B_2 long press", sizeof("B_2 long press"));
+    }
+  }
+
+  if (B_3.Event != BTN_NONE)
+  {
+    HAL_GPIO_TogglePin (L_3_GPIO_Port, L_3_Pin);
+    ButtonEvent_t event = B_3.Event;
+    B_3.Event = BTN_NONE;
+    if (event == BTN_SHORT_PRESS)
+    {
+      _UART_TX ("B_3 short press", sizeof("B_3 short press"));
+    }
+    else
+    {
+      _UART_TX ("B_3 long press", sizeof("B_3 long press"));
+    }
   }
 }
 
